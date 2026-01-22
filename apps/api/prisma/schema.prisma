@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+  refreshTokenHash String?
+  revenuecatId  String?  @unique
+  entitlement   String   @default("FREE")
+  proExpiresAt  DateTime?
+  context       UserContext?
+  sessions      Session[]
+  dailyUsage    UserDailyUsage[]
+  events        EntitlementEvent[]
+}
+
+model UserContext {
+  id        String @id @default(cuid())
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @unique
+  role      String
+  tools     String
+  goals     String
+  prefs     String
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  coachId   String
+  createdAt DateTime @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  session   Session  @relation(fields: [sessionId], references: [id])
+  sessionId String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model EntitlementEvent {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  payload   Json
+  processedAt DateTime @default(now())
+}
+
+model UserDailyUsage {
+  id        String  @id @default(cuid())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  date      DateTime
+  assistantReplies Int @default(0)
+  @@unique([userId, date])
+}

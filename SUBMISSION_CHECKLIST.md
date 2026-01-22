@@ -1,0 +1,9 @@
+- [ ] Mobile app runs in Expo client and builds with EAS.
+- [ ] RevenueCat integrated (Purchases.configure with keys from env).
+- [ ] Backend deployed or runnable locally with Postgres and OpenAI key.
+- [ ] Webhook endpoint `/webhooks/revenuecat` present and idempotent.
+- [ ] Free / Pro entitlement enforced (3 replies/day free, pro unlimited).
+- [ ] Persistent context saved for Pro users (`PUT /me/context`).
+- [ ] README + env examples included for apps.
+- [ ] Demo script (≤3 min) included.
+- [ ] Devpost proposal included.

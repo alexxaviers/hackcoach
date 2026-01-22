@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Simon AI",
+    "slug": "simon-ai",
+    "version": "0.1.0",
+    "sdkVersion": "48.0.0",
+    "platforms": ["ios","android"],
+    "orientation": "portrait",
+    "updates": { "fallbackToCacheTimeout": 0 },
+    "ios": { "supportsTablet": true }
+  }
+}
