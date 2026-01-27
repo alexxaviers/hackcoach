@@ -5,15 +5,15 @@ export default async function userRoutes(fastify: FastifyInstance){
   fastify.get('/me', async (req, reply) => {
     const userId = (req.headers as any)['x-user-id'] || null;
     if(!userId) return reply.status(401).send({error:'Unauthorized'});
-    const user = await fastify.prisma.user.findUnique({ where: { id: userId }, select: { id:true, email:true, entitlement:true, proExpiresAt:true } });
+    const { data: user } = await fastify.supabase.from('users').select('id, email, entitlement, pro_expires_at').eq('id', userId).single();
     return user;
   });
 
   fastify.get('/me/entitlement', async (req, reply) => {
     const userId = (req.headers as any)['x-user-id'] || null;
     if(!userId) return reply.status(401).send({error:'Unauthorized'});
-    const user = await fastify.prisma.user.findUnique({ where: { id: userId } });
-    return { entitlement: user?.entitlement || 'FREE', proExpiresAt: user?.proExpiresAt };
+    const { data: user } = await fastify.supabase.from('users').select('entitlement, pro_expires_at').eq('id', userId).single();
+    return { entitlement: user?.entitlement || 'FREE', proExpiresAt: user?.pro_expires_at };
   });
 
   const ctxSchema = z.object({ role: z.string(), tools: z.string(), goals: z.string(), prefs: z.string() });
@@ -21,14 +21,14 @@ export default async function userRoutes(fastify: FastifyInstance){
     const userId = (req.headers as any)['x-user-id'] || null;
     if(!userId) return reply.status(401).send({error:'Unauthorized'});
     const body = ctxSchema.parse(req.body);
-    const user = await fastify.prisma.user.findUnique({ where: { id: userId } });
+    const { data: user } = await fastify.supabase.from('users').select('id').eq('id', userId).single();
     if(!user) return reply.status(402).send({ error: 'Pro required' });
     // Save or update
-    const existing = await fastify.prisma.userContext.findUnique({ where: { userId } });
+    const { data: existing } = await fastify.supabase.from('user_context').select('id').eq('user_id', userId).single();
     if(existing){
-      await fastify.prisma.userContext.update({ where: { id: existing.id }, data: { role: body.role, tools: body.tools, goals: body.goals, prefs: body.prefs } });
+      await fastify.supabase.from('user_context').update({ role: body.role, tools: body.tools, goals: body.goals, prefs: body.prefs }).eq('id', existing.id);
     }else{
-      await fastify.prisma.userContext.create({ data: { userId, role: body.role, tools: body.tools, goals: body.goals, prefs: body.prefs } });
+      await fastify.supabase.from('user_context').insert({ user_id: userId, role: body.role, tools: body.tools, goals: body.goals, prefs: body.prefs });
     }
     return { ok: true };
   });
@@ -36,7 +36,7 @@ export default async function userRoutes(fastify: FastifyInstance){
   fastify.get('/me/context', async (req, reply) => {
     const userId = (req.headers as any)['x-user-id'] || null;
     if(!userId) return reply.status(401).send({error:'Unauthorized'});
-    const ctx = await fastify.prisma.userContext.findUnique({ where: { userId } });
+    const { data: ctx } = await fastify.supabase.from('user_context').select('*').eq('user_id', userId).single();
     return ctx || {};
   });
 }

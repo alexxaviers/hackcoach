@@ -15,7 +15,8 @@ export default async function revenuecatRoutes(fastify: FastifyInstance){
       const appUserId = payload?.subscriber?.original_app_user_id || payload?.app_user_id || payload?.subscriber?.entitlement ? payload?.subscriber?.original_app_user_id : null;
       let user = null;
       if(appUserId){
-        user = await fastify.prisma.user.findUnique({ where: { revenuecatId: appUserId } });
+        const { data: userData } = await fastify.supabase.from('users').select('id').eq('revenuecat_id', appUserId).single();
+        user = userData;
       }
 
       // if entitlement granted
@@ -23,10 +24,10 @@ export default async function revenuecatRoutes(fastify: FastifyInstance){
       // Simplified: if present, set PRO
       if(user && payload?.subscriber){
         const hasPro = !!payload.subscriber.first_seen; // naive; rely on real webhook parsing in prod
-        await fastify.prisma.user.update({ where: { id: user.id }, data: { entitlement: 'PRO', proExpiresAt: null } });
+        await fastify.supabase.from('users').update({ entitlement: 'PRO', proExpiresAt: null }).eq('id', user.id);
       }
 
-      await fastify.prisma.entitlementEvent.create({ data: { userId: user?.id, payload } });
+      await fastify.supabase.from('entitlement_events').insert({ user_id: user?.id || null, payload });
     }catch(e){
       console.error('webhook error', e);
     }

@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
-import prismaPlugin from './plugins/prisma';
+import supabasePlugin from './plugins/supabase';
 import authRoutes from './routes/auth';
 import coachRoutes from './routes/coaches';
 import sessionRoutes from './routes/sessions';
@@ -12,7 +12,7 @@ const server = Fastify({ logger: true });
 
 server.register(cors, { origin: true });
 server.register(jwt, { secret: process.env.JWT_ACCESS_SECRET || 'dev' });
-server.register(prismaPlugin);
+server.register(supabasePlugin);
 
 server.get('/', async () => ({ status: 'ok' }));
 

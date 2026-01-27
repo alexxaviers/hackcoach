@@ -8,26 +8,27 @@ export default async function authRoutes(fastify: FastifyInstance){
 
   fastify.post('/auth/signup', async (req, reply) => {
     const body = signupSchema.parse(req.body);
-    const existing = await fastify.prisma.user.findUnique({ where: { email: body.email } });
+    const { data: existing } = await fastify.supabase.from('users').select('id').eq('email', body.email).single();
     if(existing) return reply.status(400).send({ error: 'User exists' });
     const hash = await argon2.hash(body.password);
-    const user = await fastify.prisma.user.create({ data: { email: body.email, passwordHash: hash } });
+    const { data: user, error } = await fastify.supabase.from('users').insert({ email: body.email, password_hash: hash }).select('id').single();
+    if(error || !user) return reply.status(500).send({ error: 'Failed to create user' });
     const access = signAccess({ userId: user.id });
     const refresh = signRefresh({ userId: user.id });
-    await fastify.prisma.user.update({ where: { id: user.id }, data: { refreshTokenHash: await argon2.hash(refresh) } });
+    await fastify.supabase.from('users').update({ refresh_token_hash: await argon2.hash(refresh) }).eq('id', user.id);
     return { accessToken: access, refreshToken: refresh };
   });
 
   const loginSchema = signupSchema;
   fastify.post('/auth/login', async (req, reply) => {
     const body = loginSchema.parse(req.body);
-    const user = await fastify.prisma.user.findUnique({ where: { email: body.email } });
+    const { data: user } = await fastify.supabase.from('users').select('id, password_hash').eq('email', body.email).single();
     if(!user) return reply.status(401).send({ error: 'Invalid' });
     const ok = await argon2.verify(user.passwordHash, body.password);
     if(!ok) return reply.status(401).send({ error: 'Invalid' });
     const access = signAccess({ userId: user.id });
     const refresh = signRefresh({ userId: user.id });
-    await fastify.prisma.user.update({ where: { id: user.id }, data: { refreshTokenHash: await argon2.hash(refresh) } });
+    await fastify.supabase.from('users').update({ refresh_token_hash: await argon2.hash(refresh) }).eq('id', user.id);
     return { accessToken: access, refreshToken: refresh };
   });
 
@@ -36,13 +37,13 @@ export default async function authRoutes(fastify: FastifyInstance){
     if(!refreshToken) return reply.status(400).send({ error: 'Missing' });
     try{
       const payload: any = fastify.jwt.verify(refreshToken, {secret: process.env.JWT_REFRESH_SECRET || 'dev_refresh'});
-      const user = await fastify.prisma.user.findUnique({ where: { id: payload.userId } });
-      if(!user || !user.refreshTokenHash) return reply.status(401).send({ error: 'Invalid' });
-      const ok = await argon2.verify(user.refreshTokenHash, refreshToken);
+    const { data: user } = await fastify.supabase.from('users').select('id, refresh_token_hash').eq('id', payload.userId).single();
+    if(!user || !user.refresh_token_hash) return reply.status(401).send({ error: 'Invalid' });
+    const ok = await argon2.verify(user.refresh_token_hash, refreshToken);
       if(!ok) return reply.status(401).send({ error: 'Invalid' });
       const access = signAccess({ userId: user.id });
       const refresh = signRefresh({ userId: user.id });
-      await fastify.prisma.user.update({ where: { id: user.id }, data: { refreshTokenHash: await argon2.hash(refresh) } });
+      await fastify.supabase.from('users').update({ refresh_token_hash: await argon2.hash(refresh) }).eq('id', user.id);
       return { accessToken: access, refreshToken: refresh };
     }catch(e){
       return reply.status(401).send({ error: 'Invalid' });
@@ -54,7 +55,7 @@ export default async function authRoutes(fastify: FastifyInstance){
     if(!refreshToken) return reply.send({ ok: true });
     try{
       const payload: any = fastify.jwt.verify(refreshToken, {secret: process.env.JWT_REFRESH_SECRET || 'dev_refresh'});
-      await fastify.prisma.user.update({ where: { id: payload.userId }, data: { refreshTokenHash: null } });
+      await fastify.supabase.from('users').update({ refresh_token_hash: null }).eq('id', payload.userId);
     }catch(e){}
     return { ok: true };
   });
