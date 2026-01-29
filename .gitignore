@@ -1,75 +1,31 @@
 # Dependencies
 node_modules/
-.pnp/
-.pnp.js
 
-# Environment files
-.env
-.env.local
-.env.*.local
-*.env
-
-# Build outputs
-dist/
-build/
-.next/
-out/
-
-# TypeScript
-*.tsbuildinfo
-
-# Expo / React Native
+# Expo
 .expo/
+dist/
+web-build/
+
+# Native builds
+*.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
-*.orig.*
-web-build/
 
-# iOS
-ios/Pods/
-*.xcworkspace
-*.xcuserdata
+# Metro
+.metro-health-check*
 
-# Android
-android/.gradle/
-android/app/build/
-android/build/
-*.apk
-*.aab
+# Environment
+.env
+.env.local
 
-# Testing
-coverage/
-.nyc_output/
+# OS
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
 
 # Logs
-logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Prisma (legacy, can remove after full migration)
-apps/api/prisma/migrations/
-
-# Misc
-*.pem
-.cache/
