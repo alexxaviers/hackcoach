@@ -1,8 +1,0 @@
-{
-  "name": "simon-ai-shipyard",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
-}
